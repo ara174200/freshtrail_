@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Team admin | Farm to Table Tracked</title>
+<meta name="theme-color" content="#15803d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="page">
+<div class="container" style="max-width:720px">
+  <h1 class="page-title">Team admin</h1>
+  <p class="page-sub">Accounts registered in this browser. Passwords are stored as hashes, so they can't be shown. You can set a temporary one.</p>
+
+  <section class="card" id="gate" style="padding:32px;margin-top:28px">
+    <form id="pin-form" novalidate>
+      <label class="label" for="pin">Admin PIN</label>
+      <input class="input" id="pin" type="password" autocomplete="off" style="margin-top:6px">
+      <div class="error" id="pin-err" role="alert"></div>
+      <button class="btn btn-primary" type="submit" style="margin-top:18px;min-height:48px">Unlock</button>
+    </form>
+  </section>
+
+  <section class="card hidden" id="panel" style="margin-top:28px">
+    <h2>Accounts</h2>
+    <div class="list" id="users"></div>
+  </section>
+</div>
+</main>
+<div id="site-footer"></div>
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script src="common.js"></script>
+<script src="store.js"></script>
+<script>
+FT.ready(function () {
+  FT.renderHeader(); FT.renderFooter();
+  function unlocked() { try { return sessionStorage.getItem("ft_admin") === "1"; } catch (e) { return false; } }
+  function render() {
+    FT.$("#gate").classList.add("hidden");
+    FT.$("#panel").classList.remove("hidden");
+    var host = FT.$("#users"), us = FT.store.listUsers();
+    if (!us.length) { host.innerHTML = '<p class="empty">No accounts on this device yet.</p>'; return; }
+    host.innerHTML = us.map(function (u) {
+      return '<div class="list-item"><div style="min-width:0"><div class="t">' + FT.esc(u.username) + ' <small>&middot; ' + FT.esc(FT.roleLabel(u.role)) + '</small></div><div class="s">Created ' + FT.esc(String(u.created || "").slice(0, 10)) + '</div></div>' +
+        '<div style="display:flex;gap:12px"><button class="linkbtn" data-act="pw" data-u="' + FT.esc(u.username) + '" type="button">Set temp password</button><button class="linkbtn" style="color:var(--red)" data-act="del" data-u="' + FT.esc(u.username) + '" type="button">Delete</button></div></div>';
+    }).join("");
+    FT.$$("button[data-act]", host).forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var n = btn.getAttribute("data-u");
+        if (btn.getAttribute("data-act") === "del") {
+          if (confirm("Delete account " + n + "?")) { FT.store.deleteUser(n); render(); FT.toast("Deleted " + n, "ok"); }
+        } else {
+          var p = prompt("New temporary password for " + n + " (6+ characters):");
+          if (p === null) { return; }
+          FT.store.setPassword(n, p).then(function (ok) { FT.toast(ok ? "Password updated for " + n : "Password must be 6+ characters", ok ? "ok" : "err"); });
+        }
+      });
+    });
+  }
+  if (unlocked()) { render(); }
+  FT.$("#pin-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (FT.$("#pin").value === FT.cfg.adminPin) { try { sessionStorage.setItem("ft_admin", "1"); } catch (x) {} render(); }
+    else { var el = FT.$("#pin-err"); el.textContent = "Wrong PIN."; el.className = "error show"; }
+  });
+});
+</script>
+</body>
+</html>

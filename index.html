@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Farm to Table Tracked | Team FreshTrail</title>
+<meta name="description" content="Scan a QR code on a crate of vegetables to see the harvest date, the farm and every hand it passed through.">
+<meta name="theme-color" content="#15803d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main>
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <span class="pill">HCL Jigsaw Edition 7 &middot; Team FreshTrail</span>
+      <h1>Know exactly where your food comes from</h1>
+      <p class="lead">Scan the QR code on a crate to see the harvest date, the farm and every hand it passed through, from field to shelf.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="#roles">Get started <span class="ico" data-icon="arrowRight" style="font-size:18px"></span></a>
+        <a class="btn btn-ghost" href="track.html">Track a batch</a>
+      </div>
+    </div>
+    <div class="demo-wrap">
+      <a class="demo-card" href="journey.html?demo=1" style="display:block;text-decoration:none;color:inherit" aria-label="Open the demo batch journey">
+        <div class="demo-top"><span class="pill pill-sm">Demo batch</span><span class="bid">FT-7K2Q9</span></div>
+        <div class="demo-main">
+          <div class="badge"><b>74</b><span>Fresh</span></div>
+          <div>
+            <h3>Tomato &middot; Desi</h3>
+            <p>Harvested 2 days ago<br>Ramesh Farm, Nashik</p>
+          </div>
+        </div>
+        <div class="hline">
+          <div class="hstep"><div class="hdot"></div><b>Farm</b><small data-demo="-2">-</small></div>
+          <div class="hstep"><div class="hdot"></div><b>Wholesaler</b><small data-demo="-1">-</small></div>
+          <div class="hstep"><div class="hdot"></div><b>Mandi</b><small data-demo="0">-</small></div>
+          <div class="hstep"><div class="hdot now"></div><b>You</b><small>Today</small></div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="band-navy">
+  <div class="container">
+    <div class="eyebrow">The problem</div>
+    <h2 class="section-title" style="max-width:640px">The vegetable supply chain is a black box</h2>
+    <div class="stat-grid">
+      <div class="stat"><b>~40%</b><p>of India's vegetables spoil in transit.</p></div>
+      <div class="stat"><b>&#8377;92,000 cr</b><p>lost every year to that spoilage.</p></div>
+      <div class="stat"><b>20&ndash;25%</b><p>of the final retail price is what the farmer receives.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="how">
+  <div class="container">
+    <div class="eyebrow">How it works</div>
+    <h2 class="section-title">Three scans. One honest journey.</h2>
+    <div class="card-grid">
+      <div class="step-card">
+        <div class="step-top"><span class="icon-tile ico" data-icon="scan"></span><span class="step-no" aria-hidden="true">01</span></div>
+        <h3>Tag</h3>
+        <p>The farmer logs a batch and prints a QR label for the crate.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-top"><span class="icon-tile ico" data-icon="truck"></span><span class="step-no" aria-hidden="true">02</span></div>
+        <h3>Track</h3>
+        <p>The wholesaler and the mandi vendor scan the crate and log their dates.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-top"><span class="icon-tile ico" data-icon="eye"></span><span class="step-no" aria-hidden="true">03</span></div>
+        <h3>Show</h3>
+        <p>The consumer scans the same QR and sees the whole journey. No login needed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="roles" style="padding:0 0 80px">
+  <div class="container">
+    <div class="eyebrow">Choose your role</div>
+    <h2 class="section-title">Who are you?</h2>
+    <div class="card-grid">
+      <a class="role-card" href="auth.html?role=farmer">
+        <span class="icon-tile ico" data-icon="sprout"></span>
+        <h3>Farmer</h3>
+        <p>Create a batch, print its QR label and follow where it goes.</p>
+        <div class="go">Open farmer panel &rarr;</div>
+      </a>
+      <a class="role-card" href="auth.html?role=wholesaler">
+        <span class="icon-tile ico" data-icon="truck"></span>
+        <h3>Wholesaler</h3>
+        <p>Scan an incoming crate, confirm the details and log received and departed dates.</p>
+        <div class="go">Open wholesaler panel &rarr;</div>
+      </a>
+      <a class="role-card" href="auth.html?role=mandi">
+        <span class="icon-tile ico" data-icon="store"></span>
+        <h3>Mandi vendor</h3>
+        <p>Scan the crate on arrival and log the date it reached your stall.</p>
+        <div class="go">Open mandi panel &rarr;</div>
+      </a>
+      <a class="role-card navy" href="track.html">
+        <span class="icon-tile navy ico" data-icon="basket"></span>
+        <h3>Consumer</h3>
+        <p>Scan or type a Batch ID to see freshness and journey. No account needed.</p>
+        <div class="go">Track a batch &rarr;</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="sect sect-white" id="team">
+  <div class="container">
+    <div class="eyebrow">Our team</div>
+    <h2 class="section-title">Team FreshTrail</h2>
+    <p class="page-sub" style="max-width:560px;font-size:17px">Four developers building a food chain you can see into.</p>
+    <div class="card-grid">
+      <div class="team-card"><div class="avatar">A</div><h3>Aarav</h3><p>Developer</p></div>
+      <div class="team-card"><div class="avatar navy">U</div><h3>Utkarsh</h3><p>Developer</p></div>
+      <div class="team-card"><div class="avatar">A</div><h3>Aayan</h3><p>Developer</p></div>
+      <div class="team-card"><div class="avatar navy">R</div><h3>Rishab</h3><p>Developer</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="contact">
+  <div class="container">
+    <div class="eyebrow">Contact</div>
+    <h2 class="section-title">Stuck? Talk to us.</h2>
+    <p class="page-sub" style="max-width:620px;font-size:17px">We don't store emails, so forgotten passwords are sorted by the team directly.</p>
+    <div class="card-grid" style="margin-top:32px">
+      <a class="contact-card" id="c-phone" href="tel:8789826885">
+        <span class="icon-tile ico" data-icon="phone"></span>
+        <span><small>Call the team</small><strong>8789826885</strong></span>
+      </a>
+      <a class="contact-card" id="c-mail" href="mailto:aarav155211@gmail.com">
+        <span class="icon-tile navy ico" data-icon="mail"></span>
+        <span style="min-width:0"><small>Email us</small><strong>aarav155211@gmail.com</strong></span>
+      </a>
+    </div>
+  </div>
+</section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script src="common.js"></script>
+<script src="store.js"></script>
+<script src="chat.js"></script>
+<script>
+FT.ready(function () {
+  FT.renderHeader();
+  FT.renderFooter();
+  var t = FT.today();
+  FT.$$("[data-demo]").forEach(function (n) { n.textContent = FT.fmtShort(FT.addDays(t, +n.getAttribute("data-demo"))); });
+  var p = FT.$("#c-phone"), m = FT.$("#c-mail");
+  if (FT.cfg.phone) { p.href = "tel:" + FT.cfg.phone; p.querySelector("strong").textContent = FT.cfg.phone; }
+  if (FT.cfg.email) { m.href = "mailto:" + FT.cfg.email; m.querySelector("strong").textContent = FT.cfg.email; }
+});
+</script>
+</body>
+</html>

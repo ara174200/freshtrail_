@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Farmer panel | Farm to Table Tracked</title>
+<meta name="theme-color" content="#15803d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="page">
+<div class="container">
+  <h1 class="page-title">Create a batch</h1>
+  <p class="page-sub">One batch per crate. You'll get a QR label to stick on it.</p>
+
+  <div class="two-col">
+    <section class="col-a card" style="padding:32px">
+      <form id="batch-form" novalidate>
+        <div class="form-grid">
+          <div class="field" style="margin-top:0">
+            <label for="crop">Crop</label>
+            <select class="input" id="crop"></select>
+          </div>
+          <div class="field" style="margin-top:0">
+            <label for="variety">Variety <span class="opt">(optional)</span></label>
+            <input class="input" id="variety" type="text" maxlength="60" placeholder="e.g. Desi">
+          </div>
+          <div class="field">
+            <label for="qty">Quantity (kg)</label>
+            <input class="input" id="qty" type="number" min="1" max="100000" step="any" inputmode="decimal" placeholder="e.g. 120">
+          </div>
+          <div class="field">
+            <label for="harvest">Harvest date</label>
+            <input class="input" id="harvest" type="date">
+          </div>
+          <div class="field">
+            <label for="farm">Farm name</label>
+            <input class="input" id="farm" type="text" maxlength="80" placeholder="e.g. Ramesh Farm">
+          </div>
+          <div class="field">
+            <label for="village">Village / District</label>
+            <input class="input" id="village" type="text" maxlength="80" placeholder="e.g. Nashik">
+          </div>
+        </div>
+        <div class="field">
+          <label for="notes">Notes <span class="opt">(optional)</span></label>
+          <textarea class="input" id="notes" rows="3" maxlength="300" placeholder="Anything the next handler should know"></textarea>
+        </div>
+        <div class="error" id="form-error" role="alert"></div>
+        <button class="btn btn-primary btn-block" id="make" type="submit" style="margin-top:24px;min-height:50px"><span class="ico" data-icon="scan" style="font-size:20px"></span>Generate batch and QR</button>
+      </form>
+    </section>
+
+    <div class="col-b">
+      <section class="card card-hl center hidden" id="qr-card" aria-live="polite">
+        <span class="pill"><span class="ico" data-icon="check" style="font-size:16px"></span>Batch created</span>
+        <div class="qr-box" id="qr-box"></div>
+        <div class="qr-id" id="qr-id"></div>
+        <div id="qr-meta" style="margin-top:4px;font-size:15px;color:var(--muted)"></div>
+        <div class="inline" style="margin-top:20px;justify-content:center">
+          <button class="btn btn-ghost btn-sm" id="dl" type="button" style="flex:1 1 150px"><span class="ico" data-icon="download" style="font-size:18px"></span>Download PNG</button>
+          <button class="btn btn-ghost btn-sm" id="pr" type="button" style="flex:1 1 150px"><span class="ico" data-icon="printer" style="font-size:18px"></span>Print label</button>
+        </div>
+        <p style="margin-top:16px;font-size:13px;color:var(--muted)">Stick this on the crate. Scanning it opens the public journey page.</p>
+      </section>
+
+      <section class="card">
+        <h2>My batches</h2>
+        <div class="list" id="my-list"></div>
+      </section>
+    </div>
+  </div>
+</div>
+</main>
+
+<div id="print-label"></div>
+<div id="site-footer"></div>
+
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script src="common.js"></script>
+<script src="store.js"></script>
+<script src="chat.js"></script>
+<script>
+FT.ready(function () {
+  var S = FT.store.requireRole("farmer");
+  if (!S) { return; }
+  FT.renderHeader();
+
+  var crop = FT.$("#crop"), today = FT.today(), current = null;
+  crop.innerHTML = '<option value="">Choose a crop</option>' + FT.CROPS.map(function (c) { return '<option>' + FT.esc(c) + "</option>"; }).join("");
+  FT.$("#harvest").max = today;
+  FT.$("#harvest").value = today;
+
+  function err(t) { var e = FT.$("#form-error"); e.textContent = t || ""; e.className = t ? "error show" : "error"; }
+  function status(b) {
+    if (b.mandi) { return ["At mandi", "pill-sm"]; }
+    if (b.wholesaler) { return ["With wholesaler", "pill-navy pill-sm"]; }
+    return ["Awaiting wholesaler", "pill-amber pill-sm"];
+  }
+
+  function show(b) {
+    current = b;
+    var url = FT.journeyUrl(b, false);
+    FT.$("#qr-box").innerHTML = FT.qrSvg(url, "QR code for batch " + b.id);
+    FT.$("#qr-id").textContent = b.id;
+    FT.$("#qr-meta").textContent = b.crop + (b.variety ? " · " + b.variety : "") + " · " + b.qty + " kg · Harvested " + FT.fmtDate(b.harvest);
+    var card = FT.$("#qr-card");
+    card.classList.remove("hidden");
+    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function renderList() {
+    var items = FT.store.batchesByFarmer(S.username), host = FT.$("#my-list");
+    if (!items.length) { host.innerHTML = '<p class="empty">No batches yet. Create your first one with the form.</p>'; return; }
+    host.innerHTML = items.map(function (b) {
+      var st = status(b);
+      return '<div class="list-item"><div style="min-width:0"><div class="t">' + FT.esc(b.crop) + ' <small>&middot; ' + FT.esc(b.id) + '</small></div><div class="s">Harvested ' + FT.esc(FT.fmtShort(b.harvest)) + '</div></div>' +
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="pill ' + st[1] + '">' + st[0] + '</span><button class="linkbtn" type="button" data-id="' + FT.esc(b.id) + '">View QR</button></div></div>';
+    }).join("");
+    FT.$$("button[data-id]", host).forEach(function (btn) {
+      btn.addEventListener("click", function () { var b = FT.store.getBatch(btn.getAttribute("data-id")); if (b) { show(b); } });
+    });
+  }
+
+  FT.$("#batch-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    err("");
+    var v = {
+      crop: crop.value, variety: FT.$("#variety").value.trim(), qty: parseFloat(FT.$("#qty").value),
+      harvest: FT.$("#harvest").value, farm: FT.$("#farm").value.trim(), village: FT.$("#village").value.trim(), notes: FT.$("#notes").value.trim()
+    };
+    if (!v.crop) { err("Please choose a crop."); crop.focus(); return; }
+    if (!(v.qty > 0)) { err("Enter the quantity in kg (more than 0)."); FT.$("#qty").focus(); return; }
+    if (!FT.validDate(v.harvest)) { err("Please pick the harvest date."); FT.$("#harvest").focus(); return; }
+    if (v.harvest > today) { err("Harvest date can't be in the future."); FT.$("#harvest").focus(); return; }
+    if (!v.farm) { err("Please enter the farm name."); FT.$("#farm").focus(); return; }
+    var btn = FT.$("#make");
+    btn.disabled = true;
+    try {
+      var b = { id: FT.store.newBatchId(), crop: v.crop, variety: v.variety, qty: v.qty, harvest: v.harvest, farm: v.farm, village: v.village, notes: v.notes, farmer: S.username, created: new Date().toISOString(), wholesaler: null, mandi: null };
+      FT.store.putBatch(b);
+      show(b);
+      renderList();
+      FT.toast("Batch " + b.id + " created", "ok");
+      FT.$("#crop").value = ""; FT.$("#variety").value = ""; FT.$("#qty").value = ""; FT.$("#notes").value = "";
+    } catch (ex) { err("Couldn't save the batch. Please try again."); }
+    btn.disabled = false;
+  });
+
+  FT.$("#dl").addEventListener("click", function () { if (current) { FT.downloadQR(FT.journeyUrl(current, false), current.id + ".png"); } });
+  FT.$("#pr").addEventListener("click", function () {
+    if (!current) { return; }
+    FT.$("#print-label").innerHTML = '<div class="pl-brand">Farm to Table Tracked</div><div class="pl-qr">' + FT.qrSvg(FT.journeyUrl(current, false), "QR code") + '</div><div class="pl-id">' + FT.esc(current.id) + '</div><div class="pl-meta">' + FT.esc(current.crop) + (current.variety ? " &middot; " + FT.esc(current.variety) : "") + '<br>' + FT.esc(current.farm) + (current.village ? ", " + FT.esc(current.village) : "") + '<br>Harvested ' + FT.esc(FT.fmtDate(current.harvest)) + '</div><div class="pl-foot">Scan to see where this food came from</div>';
+    window.print();
+  });
+
+  FT.renderFooter();
+  renderList();
+});
+</script>
+</body>
+</html>

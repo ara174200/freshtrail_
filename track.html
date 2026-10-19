@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Track a batch | Farm to Table Tracked</title>
+<meta name="theme-color" content="#15803d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="page">
+<div class="container" style="max-width:560px">
+  <h1 class="page-title">Track a batch</h1>
+  <p class="page-sub">No account needed. Scan the QR on your crate or type its Batch ID.</p>
+  <section class="card" style="padding:32px;margin-top:28px">
+    <button class="btn btn-primary btn-block" id="scan" type="button" style="min-height:50px"><span class="ico" data-icon="scan" style="font-size:20px"></span>Scan QR with camera</button>
+    <div class="divider">or type it</div>
+    <form id="f" novalidate>
+      <label class="label" for="bid">Batch ID</label>
+      <div class="inline" style="margin-top:6px">
+        <input class="input" id="bid" type="text" placeholder="e.g. FT-7K2Q9" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button class="btn btn-ghost" type="submit" style="min-height:48px">Track</button>
+      </div>
+    </form>
+    <div class="error" id="err" role="alert"></div>
+    <p style="margin-top:20px;font-size:14px;color:var(--muted)">Just exploring? <a href="journey.html?demo=1" style="font-weight:600">Open the demo batch</a>.</p>
+  </section>
+</div>
+</main>
+<div id="site-footer"></div>
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script src="common.js"></script>
+<script src="store.js"></script>
+<script src="scanner.js"></script>
+<script src="chat.js"></script>
+<script>
+FT.ready(function () {
+  FT.renderHeader(); FT.renderFooter();
+  function err(t) { var e = FT.$("#err"); e.textContent = t || ""; e.className = t ? "error show" : "error"; }
+  function go(raw) {
+    err("");
+    var p = FT.parseBatchInput(raw);
+    if (!p) { err("That doesn't look like a Batch ID. It looks like FT-7K2Q9."); return; }
+    var u = "journey.html?b=" + encodeURIComponent(p.id) + (p.payload ? "&d=" + encodeURIComponent(p.payload) : "");
+    location.href = u;
+  }
+  FT.$("#f").addEventListener("submit", function (e) { e.preventDefault(); go(FT.$("#bid").value); });
+  FT.$("#scan").addEventListener("click", function () {
+    err("");
+    FT.scan({ onCode: go, onFail: function (m) { err(m); FT.$("#bid").focus(); } });
+  });
+});
+</script>
+</body>
+</html>

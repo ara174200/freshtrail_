@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Log in or register | Farm to Table Tracked</title>
+<meta name="theme-color" content="#15803d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="auth-wrap">
+  <aside class="auth-side">
+    <a class="brand" href="index.html"><span class="brand-logo ico" data-icon="leaf"></span><span class="brand-name">Farm to Table Tracked</span></a>
+    <div>
+      <h1>Every crate has a story. Add your part of it.</h1>
+      <ul>
+        <li><span class="ico" data-icon="check"></span><span>Farmers create batches and print QR labels</span></li>
+        <li><span class="ico" data-icon="check"></span><span>Wholesalers and mandi vendors log their dates</span></li>
+        <li><span class="ico" data-icon="check"></span><span>Consumers never need an account</span></li>
+      </ul>
+    </div>
+    <div style="font-size:14px;color:#dff3e6">&copy; 2026 Team FreshTrail</div>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-card">
+      <div class="auth-top">
+        <span class="pill"><span class="ico" id="role-ico" style="font-size:16px"></span><span id="role-label">Farmer panel</span></span>
+        <a href="index.html#roles" style="font-size:14px;font-weight:500">Not a <span id="role-word">farmer</span>?</a>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Log in or register">
+        <button type="button" class="tab" id="tab-login" role="tab" aria-selected="true">Log in</button>
+        <button type="button" class="tab" id="tab-register" role="tab" aria-selected="false">Register</button>
+      </div>
+
+      <h1 id="auth-title" style="font-size:28px;margin-top:24px;letter-spacing:-.015em">Welcome back</h1>
+      <p class="sub" id="auth-sub" style="margin-top:6px;font-size:15px;color:var(--muted)">Log in with your username and password.</p>
+
+      <form id="auth-form" novalidate autocomplete="on">
+        <div class="field" style="margin-top:22px">
+          <label for="username">Username</label>
+          <input class="input" id="username" name="username" type="text" placeholder="e.g. ramesh_farm" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20">
+          <div class="hint" id="user-hint" style="display:none">3 to 20 characters: lowercase letters, numbers or underscore.</div>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="pw-wrap">
+            <input class="input" id="password" name="password" type="password" placeholder="At least 6 characters" autocomplete="current-password">
+            <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Show password">Show</button>
+          </div>
+        </div>
+        <div class="error" id="auth-error" role="alert"></div>
+        <button class="btn btn-primary btn-block" id="submit" type="submit" style="margin-top:26px;min-height:50px">Log in</button>
+      </form>
+
+      <div class="note" style="margin-top:20px">No email needed. Just pick a username and password. Forgot it? <a href="#" id="forgot" style="font-weight:600">Contact the team</a>.</div>
+    </div>
+  </main>
+</div>
+
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script src="common.js"></script>
+<script src="store.js"></script>
+<script src="chat.js"></script>
+<script>
+FT.ready(function () {
+  var role = new URLSearchParams(location.search).get("role");
+  if (["farmer", "wholesaler", "mandi"].indexOf(role) < 0) { location.replace("index.html#roles"); return; }
+  var s = FT.store.session();
+  if (s && s.role === role) { location.replace(FT.panelFor(role)); return; }
+
+  var labels = { farmer: "Farmer panel", wholesaler: "Wholesaler panel", mandi: "Mandi vendor panel" };
+  var words = { farmer: "farmer", wholesaler: "wholesaler", mandi: "mandi vendor" };
+  var icons = { farmer: "sprout", wholesaler: "truck", mandi: "store" };
+  FT.$("#role-label").textContent = labels[role];
+  FT.$("#role-word").textContent = words[role];
+  FT.$("#role-ico").innerHTML = FT.icon(icons[role]);
+  document.title = labels[role] + " | Farm to Table Tracked";
+
+  var mode = "login";
+  var form = FT.$("#auth-form"), err = FT.$("#auth-error"), btn = FT.$("#submit");
+  var u = FT.$("#username"), p = FT.$("#password");
+
+  function setMode(m) {
+    mode = m;
+    var reg = m === "register";
+    FT.$("#tab-login").setAttribute("aria-selected", String(!reg));
+    FT.$("#tab-register").setAttribute("aria-selected", String(reg));
+    FT.$("#auth-title").textContent = reg ? "Create your account" : "Welcome back";
+    FT.$("#auth-sub").textContent = reg ? "Pick a username and a password. That's all we need." : "Log in with your username and password.";
+    FT.$("#user-hint").style.display = reg ? "block" : "none";
+    btn.textContent = reg ? "Create account" : "Log in";
+    p.setAttribute("autocomplete", reg ? "new-password" : "current-password");
+    err.className = "error"; err.textContent = "";
+  }
+  function showErr(t) { err.textContent = t; err.className = "error show"; }
+
+  FT.$("#tab-login").addEventListener("click", function () { setMode("login"); });
+  FT.$("#tab-register").addEventListener("click", function () { setMode("register"); });
+  FT.$("#pw-toggle").addEventListener("click", function () {
+    var show = p.type === "password";
+    p.type = show ? "text" : "password";
+    this.textContent = show ? "Hide" : "Show";
+    this.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  });
+  FT.$("#forgot").addEventListener("click", function (e) { e.preventDefault(); if (FT.openChat) { FT.openChat(); } });
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = u.value.trim().toLowerCase(), pass = p.value;
+    if (!name || !pass) { showErr("Enter a username and password."); return; }
+    btn.disabled = true;
+    var run = mode === "register" ? FT.store.register(role, name, pass) : FT.store.login(role, name, pass);
+    run.then(function (r) {
+      if (!r.ok) { showErr(r.error); btn.disabled = false; return; }
+      if (mode === "register") { FT.notifyRegistration(role, r.username); }
+      FT.toast(mode === "register" ? "Account created. Welcome, " + r.username + "!" : "Welcome back, " + r.username + "!", "ok");
+      setTimeout(function () { location.href = FT.panelFor(role); }, 450);
+    }, function () { showErr("Something went wrong. Please try again."); btn.disabled = false; });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Batch journey | Farm to Table Tracked</title>
+<meta name="theme-color" content="#15803d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="page">
+<div class="container" style="max-width:640px">
+  <div id="view"></div>
+</div>
+</main>
+<div id="site-footer"></div>
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script src="common.js"></script>
+<script src="store.js"></script>
+<script src="chat.js"></script>
+<script>
+FT.ready(function () {
+  FT.renderHeader(); FT.renderFooter();
+  var q = new URLSearchParams(location.search), view = FT.$("#view"), b = null;
+
+  if (q.get("demo")) { b = FT.demoBatch(); }
+  else {
+    var id = (q.get("b") || "").toUpperCase();
+    var local = id ? FT.store.getBatch(id) : null;
+    var rem = q.get("d") ? FT.decodeBatch(q.get("d")) : null;
+    if (rem && rem.id !== id) { rem = null; }
+    b = local || rem;
+    if (local && rem) {
+      b = JSON.parse(JSON.stringify(local));
+      if (!b.wholesaler && rem.wholesaler) { b.wholesaler = rem.wholesaler; }
+      if (!b.mandi && rem.mandi) { b.mandi = rem.mandi; }
+    }
+  }
+
+  if (!b) {
+    view.innerHTML = '<section class="card center" style="padding:36px"><h1 class="page-title" style="font-size:28px">Batch not found</h1><p class="page-sub">We couldn\'t find that batch. Check the ID on the crate label (it looks like FT-7K2Q9), or scan the QR again.</p><div class="btn-row" style="justify-content:center;margin-top:22px"><a class="btn btn-primary" href="track.html">Try again</a><a class="btn btn-ghost" href="journey.html?demo=1">See the demo</a></div></section>';
+    return;
+  }
+
+  var days = FT.daysSince(b.harvest), sc = FT.score(b.crop, days), lab = FT.scoreLabel(sc);
+  var C = 2 * Math.PI * 56, off = C * (1 - sc / 100);
+  function step(title, sub, done) {
+    return '<div class="vstep' + (done ? "" : " is-pending") + '"><span class="vdot' + (done ? "" : " pending") + '">' + (done ? FT.icon("check") : "") + '</span><b>' + title + '</b><small>' + sub + '</small></div>';
+  }
+  var w = b.wholesaler, m = b.mandi;
+  function where(c) {
+    if (!c || typeof c.lat !== "number" || typeof c.lng !== "number") { return ""; }
+    return '<br><a href="' + FT.esc(FT.mapUrl(c)) + '" target="_blank" rel="noopener" style="font-weight:600">' + FT.esc(c.place || "View on map") + ' &rarr;</a>';
+  }
+  var tl = step("Farm", FT.esc(b.farm) + (b.village ? ", " + FT.esc(b.village) : "") + " &middot; Harvested " + FT.esc(FT.fmtDate(b.harvest)), true) +
+    step("Wholesaler", w ? "Received " + FT.esc(FT.fmtShort(w.received)) + (w.departed ? " &middot; Departed " + FT.esc(FT.fmtShort(w.departed)) : "") + where(w) : "Not scanned yet", !!w) +
+    step("Mandi", m ? "Received " + FT.esc(FT.fmtShort(m.received)) + (m.departed ? " &middot; Departed " + FT.esc(FT.fmtShort(m.departed)) : "") + where(m) : "Not scanned yet", !!m) +
+    '<div class="vstep"><span class="vdot now"></span><b>You</b><small>Viewing today, ' + FT.esc(FT.fmtShort(FT.today())) + '</small></div>';
+
+  view.innerHTML =
+    '<section class="card" style="padding:32px">' +
+    (b.demo ? '<span class="pill pill-sm" style="margin-bottom:14px">Demo batch</span>' : "") +
+    '<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center">' +
+    '<div class="ring"><svg viewBox="0 0 132 132" aria-hidden="true"><circle cx="66" cy="66" r="56" fill="none" stroke="#e3ece6" stroke-width="12"/><circle cx="66" cy="66" r="56" fill="none" stroke="' + lab.color + '" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/></svg><div class="mid"><b>' + sc + '</b><span style="color:' + lab.color + '">' + lab.text + '</span></div></div>' +
+    '<div style="flex:1 1 220px;min-width:0"><div style="font-size:13px;color:var(--muted);letter-spacing:.06em;font-weight:600">' + FT.esc(b.id) + '</div><h1 style="font-size:30px;margin-top:2px">' + FT.esc(b.crop) + (b.variety ? " &middot; " + FT.esc(b.variety) : "") + '</h1><p style="margin-top:6px;color:var(--muted);font-size:15px">Harvested ' + FT.esc(FT.ago(days)) + (b.qty ? " &middot; " + FT.esc(b.qty) + " kg" : "") + '</p></div></div>' +
+    '<div class="rows" style="margin-top:24px"><div class="row"><span>Farm</span><span>' + FT.esc(b.farm) + '</span></div>' +
+    (b.village ? '<div class="row"><span>Location</span><span>' + FT.esc(b.village) + '</span></div>' : "") +
+    '<div class="row"><span>Harvest date</span><span>' + FT.esc(FT.fmtDate(b.harvest)) + '</span></div></div></section>' +
+    '<section class="card" style="margin-top:24px"><h2>Journey</h2><div class="vtl">' + tl + '</div></section>' +
+    '<p style="margin-top:18px;font-size:13px;color:var(--muted);text-align:center">Freshness is an estimate from harvest date and typical shelf life for ' + FT.esc(b.crop) + '.</p>' +
+    '<div class="btn-row" style="justify-content:center;margin-top:20px"><a class="btn btn-ghost btn-sm" href="auth.html?role=wholesaler">Wholesaler? Check in</a><a class="btn btn-ghost btn-sm" href="auth.html?role=mandi">Mandi vendor? Check in</a></div>';
+  document.title = b.crop + " " + b.id + " | Farm to Table Tracked";
+});
+</script>
+</body>
+</html>

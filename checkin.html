@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Check in a crate | Farm to Table Tracked</title>
+<meta name="theme-color" content="#15803d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="page">
+<div class="container">
+  <h1 class="page-title">Check in a crate</h1>
+  <p class="page-sub">Scan the QR on the crate, confirm what the farmer entered, then log your dates.</p>
+
+  <div class="two-col">
+    <div class="col-b" style="flex:1 1 380px">
+      <section class="card">
+        <h2>Find the batch</h2>
+        <button class="btn btn-primary btn-block" id="scan" type="button" style="margin-top:18px;min-height:50px"><span class="ico" data-icon="scan" style="font-size:20px"></span>Scan QR with camera</button>
+        <div class="divider">or type it</div>
+        <form id="find-form" novalidate>
+          <label class="label" for="bid">Batch ID</label>
+          <div class="inline" style="margin-top:6px">
+            <input class="input" id="bid" type="text" placeholder="e.g. FT-7K2Q9" autocomplete="off" autocapitalize="characters" spellcheck="false">
+            <button class="btn btn-ghost" type="submit" style="min-height:48px">Find batch</button>
+          </div>
+        </form>
+        <div class="error" id="find-error" role="alert"></div>
+      </section>
+
+      <section class="card">
+        <h2>Your recent check-ins</h2>
+        <div class="list" id="recent"></div>
+      </section>
+    </div>
+
+    <div class="col-a" style="flex:1 1 520px">
+      <section class="card" id="empty-card" style="padding:32px">
+        <h2>No batch selected yet</h2>
+        <p class="page-sub">Scan a crate or type its Batch ID. The farmer's details will appear here for you to confirm.</p>
+      </section>
+
+      <section class="card hidden" id="batch-card" style="padding:32px">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px">
+          <h2 id="b-id" style="font-size:26px;letter-spacing:.03em"></h2>
+          <span class="pill pill-sm"><span class="ico" data-icon="check" style="font-size:14px"></span>Batch found</span>
+        </div>
+        <p style="margin-top:6px;font-size:14px;color:var(--muted)">Entered by the farmer. Read only.</p>
+        <div class="rows" style="margin-top:18px" id="b-rows"></div>
+
+        <form id="ci-form" novalidate>
+          <div class="check">
+            <input type="checkbox" id="confirm">
+            <label for="confirm">I have checked that these details match the crate.</label>
+          </div>
+          <div class="form-grid" style="margin-top:4px">
+            <div class="field">
+              <label for="recv">Date received</label>
+              <input class="input" id="recv" type="date">
+            </div>
+            <div class="field">
+              <label for="dep">Date departed <span class="opt" id="dep-opt"></span></label>
+              <input class="input" id="dep" type="date">
+            </div>
+          </div>
+          <p class="hint">Received must be on or after the harvest date. Departed must be on or after received. Future dates aren't allowed.</p>
+          <div class="note" id="loc-box" style="margin-top:20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px">
+            <span id="loc-text">Location: not captured yet</span>
+            <button class="linkbtn" id="loc-retry" type="button">Get my location</button>
+          </div>
+          <p class="hint">Your phone's location is recorded with this check-in so the journey shows where the crate was. Your browser will ask for permission.</p>
+          <div class="error" id="ci-error" role="alert"></div>
+          <button class="btn btn-primary btn-block" id="save" type="submit" style="margin-top:24px;min-height:50px">Save check-in</button>
+        </form>
+      </section>
+
+      <section class="card card-hl center hidden" id="share-card" style="margin-top:28px">
+        <span class="pill"><span class="ico" data-icon="check" style="font-size:16px"></span>Check-in saved</span>
+        <h2 style="margin-top:14px;font-size:22px">Updated journey QR</h2>
+        <p style="margin-top:6px;font-size:14px;color:var(--muted)">This QR carries the latest journey, so a consumer's phone shows every step you and the others logged.</p>
+        <div class="qr-box" id="share-qr"></div>
+        <div class="inline" style="margin-top:18px;justify-content:center">
+          <a class="btn btn-ghost btn-sm" id="share-open" href="#" target="_blank" rel="noopener" style="flex:1 1 150px">Open journey page</a>
+          <button class="btn btn-ghost btn-sm" id="share-copy" type="button" style="flex:1 1 150px"><span class="ico" data-icon="copy" style="font-size:18px"></span>Copy link</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script src="common.js"></script>
+<script src="store.js"></script>
+<script src="scanner.js"></script>
+<script src="chat.js"></script>
+<script>
+FT.ready(function () {
+  var q = new URLSearchParams(location.search);
+  var role = q.get("role");
+  if (role !== "wholesaler" && role !== "mandi") { location.replace("index.html#roles"); return; }
+  var S = FT.store.requireRole(role);
+  if (!S) { return; }
+  FT.renderHeader();
+  FT.renderFooter();
+  document.title = FT.roleLabel(role) + " panel | Farm to Table Tracked";
+
+  var today = FT.today(), current = null;
+  FT.$("#dep-opt").textContent = role === "mandi" ? "(optional)" : "";
+
+  function ferr(t) { var e = FT.$("#find-error"); e.textContent = t || ""; e.className = t ? "error show" : "error"; }
+  function cerr(t) { var e = FT.$("#ci-error"); e.textContent = t || ""; e.className = t ? "error show" : "error"; }
+
+  var loc = { state: "idle", lat: null, lng: null, place: "" };
+  function locUi() {
+    var t = FT.$("#loc-text"), r = FT.$("#loc-retry");
+    if (loc.state === "pending") { t.textContent = "Getting your location..."; r.classList.add("hidden"); }
+    else if (loc.state === "ok") { t.textContent = "Location captured: " + (loc.place ? loc.place + " (" : "") + loc.lat.toFixed(4) + ", " + loc.lng.toFixed(4) + (loc.place ? ")" : ""); r.textContent = "Refresh"; r.classList.remove("hidden"); }
+    else if (loc.state === "fail") { t.textContent = "Couldn't get your location. Allow location access in the browser, then try again."; r.textContent = "Try again"; r.classList.remove("hidden"); }
+    else { t.textContent = "Location: not captured yet"; r.textContent = "Get my location"; r.classList.remove("hidden"); }
+  }
+  function getLoc() {
+    if (!navigator.geolocation) { loc.state = "fail"; locUi(); return; }
+    loc = { state: "pending", lat: null, lng: null, place: "" }; locUi();
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      loc = { state: "ok", lat: Math.round(pos.coords.latitude * 1e5) / 1e5, lng: Math.round(pos.coords.longitude * 1e5) / 1e5, place: "" };
+      locUi();
+      /* best-effort place name; location still works without it */
+      try {
+        var ctl = new AbortController(), tm = setTimeout(function () { ctl.abort(); }, 5000), mine = loc;
+        fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&lat=" + loc.lat + "&lon=" + loc.lng, { signal: ctl.signal })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            clearTimeout(tm);
+            var a = (j && j.address) || {};
+            var name = a.suburb || a.village || a.town || a.city || a.county || a.state_district || "";
+            var st = a.state || "";
+            if (loc === mine && name) { loc.place = (name + (st && st !== name ? ", " + st : "")).slice(0, 60); locUi(); }
+          }).catch(function () {});
+      } catch (e) { /* ignore */ }
+    }, function () { loc = { state: "fail", lat: null, lng: null, place: "" }; locUi(); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+  }
+  FT.$("#loc-retry").addEventListener("click", getLoc);
+
+  function resolve(raw) {
+    var p = FT.parseBatchInput(raw);
+    if (!p) { return null; }
+    var b = FT.store.getBatch(p.id);
+    if (b) { return b; }
+    if (p.payload) {
+      var d = FT.decodeBatch(p.payload);
+      if (d && d.id === p.id) { FT.store.putBatch(d); return d; }
+    }
+    return null;
+  }
+
+  function showBatch(b) {
+    current = b;
+    FT.$("#empty-card").classList.add("hidden");
+    FT.$("#share-card").classList.add("hidden");
+    FT.$("#batch-card").classList.remove("hidden");
+    FT.$("#b-id").textContent = b.id;
+    function line(k, v) { return '<div class="row"><span>' + k + "</span><span>" + FT.esc(v) + "</span></div>"; }
+    FT.$("#b-rows").innerHTML =
+      line("Crop", b.crop + (b.variety ? " · " + b.variety : "")) +
+      line("Quantity", b.qty + " kg") +
+      line("Harvested", FT.fmtDate(b.harvest)) +
+      line("Farm", b.farm + (b.village ? ", " + b.village : "")) +
+      line("Wholesaler", b.wholesaler ? "Received " + FT.fmtShort(b.wholesaler.received) + (b.wholesaler.departed ? " · Departed " + FT.fmtShort(b.wholesaler.departed) : "") : "Not yet scanned") +
+      line("Mandi", b.mandi ? "Received " + FT.fmtShort(b.mandi.received) + (b.mandi.departed ? " · Departed " + FT.fmtShort(b.mandi.departed) : "") : "Not yet scanned");
+    var mineDone = b[role];
+    var rcv = FT.$("#recv"), dep = FT.$("#dep");
+    rcv.min = b.harvest; rcv.max = today; dep.max = today;
+    rcv.value = mineDone ? mineDone.received : (b.harvest <= today ? today : b.harvest);
+    dep.value = mineDone && mineDone.departed ? mineDone.departed : "";
+    dep.min = rcv.value;
+    FT.$("#confirm").checked = false;
+    FT.$("#save").textContent = mineDone ? "Update my check-in" : "Save check-in";
+    cerr("");
+    getLoc();
+    FT.$("#batch-card").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function lookup(raw) {
+    ferr("");
+    if (!String(raw || "").trim()) { ferr("Enter a Batch ID first."); return; }
+    var b = resolve(raw);
+    if (!b) { ferr("Batch not found. Check the ID on the crate label (it looks like FT-7K2Q9) or scan the QR again."); return; }
+    FT.$("#bid").value = b.id;
+    showBatch(b);
+  }
+
+  function renderRecent() {
+    var items = FT.store.checkinsBy(S.username, role), host = FT.$("#recent");
+    if (!items.length) { host.innerHTML = '<p class="empty">Nothing yet. Your check-ins will show up here.</p>'; return; }
+    host.innerHTML = items.slice(0, 8).map(function (b) {
+      var c = b[role];
+      return '<div class="list-item"><div style="min-width:0"><div class="t">' + FT.esc(b.crop) + ' <small>&middot; ' + FT.esc(b.id) + '</small></div><div class="s">Received ' + FT.esc(FT.fmtShort(c.received)) + (c.departed ? " &middot; Departed " + FT.esc(FT.fmtShort(c.departed)) : "") + "</div></div></div>";
+    }).join("");
+  }
+
+  FT.$("#find-form").addEventListener("submit", function (e) { e.preventDefault(); lookup(FT.$("#bid").value); });
+  FT.$("#scan").addEventListener("click", function () {
+    ferr("");
+    FT.scan({ onCode: function (text) { lookup(text); }, onFail: function (m) { ferr(m); FT.$("#bid").focus(); } });
+  });
+  FT.$("#recv").addEventListener("change", function () { FT.$("#dep").min = this.value || ""; });
+
+  FT.$("#ci-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    cerr("");
+    if (!current) { return; }
+    var latest = FT.store.getBatch(current.id) || current;
+    var recv = FT.$("#recv").value, dep = FT.$("#dep").value;
+    var mine = latest[role];
+    if (mine && mine.user !== S.username && mine.user !== "(imported)") { cerr("This batch was already checked in by another " + FT.roleLabel(role).toLowerCase() + "."); return; }
+    if (!FT.$("#confirm").checked) { cerr("Please tick the box to confirm the details match the crate."); return; }
+    if (!FT.validDate(recv)) { cerr("Please pick the date received."); return; }
+    if (recv > today) { cerr("Date received can't be in the future."); return; }
+    if (recv < latest.harvest) { cerr("Date received can't be before the harvest date (" + FT.fmtDate(latest.harvest) + ")."); return; }
+    if (role === "wholesaler" && !dep) { cerr("Please pick the date departed."); return; }
+    if (dep) {
+      if (!FT.validDate(dep)) { cerr("Please pick a valid departed date."); return; }
+      if (dep > today) { cerr("Date departed can't be in the future."); return; }
+      if (dep < recv) { cerr("Date departed can't be before the date received."); return; }
+    }
+    if (loc.state === "pending") { cerr("Still getting your location. One moment, then tap Save again."); return; }
+    var btn = FT.$("#save");
+    btn.disabled = true;
+    try {
+      latest[role] = { user: S.username, received: recv, departed: dep || null, at: new Date().toISOString(),
+        lat: loc.state === "ok" ? loc.lat : null, lng: loc.state === "ok" ? loc.lng : null, place: loc.state === "ok" ? loc.place : "" };
+      FT.store.putBatch(latest);
+      current = latest;
+      FT.toast("Check-in saved for " + latest.id, "ok");
+      showBatch(latest);
+      FT.$("#batch-card").classList.remove("hidden");
+      var url = FT.journeyUrl(latest, true);
+      FT.$("#share-qr").innerHTML = FT.qrSvg(url, "Updated journey QR for " + latest.id);
+      FT.$("#share-open").href = url;
+      FT.$("#share-copy").onclick = function () { FT.copy(url).then(function (ok) { FT.toast(ok ? "Link copied" : "Couldn't copy. Long-press the link to copy it.", ok ? "ok" : "err"); }); };
+      FT.$("#share-card").classList.remove("hidden");
+      renderRecent();
+    } catch (ex) { cerr("Couldn't save. Please try again."); }
+    btn.disabled = false;
+  });
+
+  renderRecent();
+  var pre = q.get("b");
+  if (pre) { lookup(location.search.indexOf("d=") > -1 ? location.href : pre); }
+});
+</script>
+</body>
+</html>
