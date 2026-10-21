@@ -14,10 +14,10 @@ window.FT_CONFIG = {
        2) Formspree:  create a form at https://formspree.io and paste its endpoint URL
      Leave both empty to switch alerts off. */
   notify: {
-    web3formsKey: "",
+    web3formsKey: "0ccee250-02d3-4869-8c28-e2620b154e55",
     formspreeUrl: ""
   },
 
   /* PIN for admin.html (the "accounts on this device" page). CHANGE THIS. */
-  adminPin: "change-me-123"
+  adminPin: "an12512"
 };
