@@ -17,16 +17,18 @@
     dates: "Dates can't be in the future. Received must be on or after the harvest date, and departed on or after received. Wholesalers must enter both dates; mandi vendors can leave departed empty.",
     roles: "Farmer: creates a batch and prints its QR label. Wholesaler and Mandi vendor: scan the crate and log the dates they received and sent it on. Consumer: no account needed, just scan the QR or type the Batch ID to see the journey.",
     how: "Tag: the farmer creates a batch and sticks the QR on the crate. Track: the wholesaler and mandi vendor scan it and log their dates. Show: the consumer scans the same QR and sees harvest date, farm, handlers and freshness.",
+    split: "If a wholesaler sends one crate to several mandi vendors: after checking the batch in, scroll to Split into lots, enter each vendor's weight and tap Create lot. Each lot gets its own QR. The weights can't add up to more than the batch. Each mandi vendor scans only their own lot QR.",
     contact: "You can reach " + contactLine + ".",
     fallback: "I'm not sure about that. You can reach " + contactLine + "."
   };
-  var CHIPS = ["How do I register?", "How do I scan a QR?", "Batch not found", "How is freshness calculated?", "I forgot my password", "Contact the team"];
+  var CHIPS = ["How do I register?", "How do I scan a QR?", "Batch not found", "How is freshness calculated?", "I forgot my password", "Wholesaler sending to many mandis", "Contact the team"];
 
   function match(text) {
     var t = text.toLowerCase();
     if (/forgot|reset|lost.*(pass|login)|password/.test(t) && !/short|length|characters|least/.test(t)) { return "password"; }
     if (/regist|sign ?up|create.*account|new account|account/.test(t)) { return "register"; }
     if (/log ?in|sign ?in|can'?t get in|wrong (user|pass)/.test(t)) { return "login"; }
+    if (/split|lots?\b|divide|distribut|several|multiple|share the|many mandi|weigh/.test(t)) { return "split"; }
     if (/not found|no batch|invalid|batch|\bid\b/.test(t)) { return "batch"; }
     if (/scan|camera|qr/.test(t)) { return "scan"; }
     if (/print|download|label|sticker|png/.test(t)) { return "print"; }

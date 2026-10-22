@@ -116,7 +116,7 @@ FT.ready(function () {
   }
 
   function renderList() {
-    var items = FT.store.batchesByFarmer(S.username), host = FT.$("#my-list");
+    var items = FT.store.batchesByFarmer(S.username).filter(function (x) { return !x.parent; }), host = FT.$("#my-list");
     if (!items.length) { host.innerHTML = '<p class="empty">No batches yet. Create your first one with the form.</p>'; return; }
     host.innerHTML = items.map(function (b) {
       var st = status(b);

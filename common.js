@@ -104,7 +104,7 @@
     }
     var w = b.wholesaler ? pack(b.wholesaler) : 0;
     var m = b.mandi ? pack(b.mandi) : 0;
-    return b64enc(JSON.stringify([b.id, b.crop, b.variety || "", b.qty || 0, b.harvest, b.farm, b.village || "", w, m]));
+    return b64enc(JSON.stringify([b.id, b.crop, b.variety || "", b.qty || 0, b.harvest, b.farm, b.village || "", w, m, b.parent || "", b.parentQty || 0]));
   };
   function cleanStr(v, max) { return typeof v === "string" ? v.slice(0, max) : ""; }
   FT.decodeBatch = function (s) {
@@ -117,6 +117,7 @@
         farmer: "", wholesaler: null, mandi: null, imported: true
       };
       if (!out.crop || !out.farm) { return null; }
+      if (/^FT-[A-Z0-9]{5}$/.test(j[9] || "")) { out.parent = j[9]; out.parentQty = Math.max(0, +j[10] || 0); }
       [["wholesaler", j[7]], ["mandi", j[8]]].forEach(function (p) {
         var v = p[1];
         if (Array.isArray(v) && FT.validDate(v[0])) {
@@ -135,7 +136,7 @@
     u.search = "";
     u.hash = "";
     u.searchParams.set("b", batch.id);
-    u.searchParams.set("d", FT.encodeBatch(full ? batch : { id: batch.id, crop: batch.crop, variety: batch.variety, qty: batch.qty, harvest: batch.harvest, farm: batch.farm, village: batch.village }));
+    u.searchParams.set("d", FT.encodeBatch(full ? batch : { id: batch.id, crop: batch.crop, variety: batch.variety, qty: batch.qty, harvest: batch.harvest, farm: batch.farm, village: batch.village, parent: batch.parent, parentQty: batch.parentQty }));
     return u.toString();
   };
   /* Accepts a Batch ID, a journey link, or text scanned from a QR code. */

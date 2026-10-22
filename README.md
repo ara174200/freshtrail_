@@ -1,6 +1,6 @@
 # Farm to Table Tracked (Team FreshTrail)
 
-Static site, flat layout (all files in one folder).
+Static site: HTML, CSS and vanilla JS. No build step.
 
 ## Run locally
     python3 -m http.server 8000
@@ -27,3 +27,6 @@ Accounts, batches and check-ins live in each browser's localStorage, so the admi
 
 ## Location capture
 Wholesaler and mandi check-ins record the phone's GPS location (with the browser's permission) and show it on the journey page as a map link. Needs https (GitHub Pages is fine) or localhost. If permission is denied, the check-in can still be saved without a location.
+
+## Splitting a crate into lots
+After a wholesaler checks in a batch, the "Split into lots" card lets them make a lot per mandi vendor (weight plus optional vendor name). Each lot has its own QR, carries the farm and wholesaler details, and is capped so lots can't add up to more than the batch. Mandi vendors scan only their lot.

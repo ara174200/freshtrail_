@@ -98,6 +98,14 @@
         .sort(function (a, c) { return String(c[role].at).localeCompare(String(a[role].at)); });
     },
 
+    /* lots a wholesaler split out of a batch (stored on this device) */
+    lotsOf: function (parentId) {
+      var b = read(K.batches, {});
+      return Object.keys(b).map(function (k) { return b[k]; })
+        .filter(function (x) { return x.parent === parentId; })
+        .sort(function (a, c) { return String(a.created || "").localeCompare(String(c.created || "")); });
+    },
+
     /* admin helpers (accounts stored in this browser only) */
     listUsers: function () {
       var users = read(K.users, {});

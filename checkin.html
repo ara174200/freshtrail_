@@ -80,6 +80,31 @@
         </form>
       </section>
 
+      <section class="card hidden" id="split-card" style="padding:32px;margin-bottom:28px">
+        <h2>Split into lots for mandi vendors</h2>
+        <p class="page-sub" style="font-size:15px">Sending this crate to more than one mandi? Make a lot for each vendor with its own weight and QR. Each vendor scans only their lot.</p>
+        <div class="rows" style="margin-top:16px"><div class="row"><span>Total received</span><span id="sp-total"></span></div><div class="row"><span>In lots</span><span id="sp-used"></span></div><div class="row"><span>Still to allocate</span><span id="sp-left"></span></div></div>
+        <form id="lot-form" novalidate>
+          <div class="form-grid">
+            <div class="field"><label for="lot-kg">Lot weight (kg)</label><input class="input" id="lot-kg" type="number" min="0.1" step="any" inputmode="decimal" placeholder="e.g. 25"></div>
+            <div class="field"><label for="lot-to">For <span class="opt">(vendor name, optional)</span></label><input class="input" id="lot-to" type="text" maxlength="40" placeholder="e.g. Sharma Stall"></div>
+          </div>
+          <div class="error" id="lot-err" role="alert"></div>
+          <button class="btn btn-primary btn-block" type="submit" style="margin-top:20px;min-height:48px">Create lot and QR</button>
+        </form>
+        <div class="list" id="lot-list"></div>
+        <div class="center hidden" id="lot-show" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--line2)">
+          <div class="qr-box" id="lot-qr"></div>
+          <div class="qr-id" id="lot-id"></div>
+          <div id="lot-meta" style="font-size:15px;color:var(--muted)"></div>
+          <div class="inline" style="margin-top:16px;justify-content:center">
+            <button class="btn btn-ghost btn-sm" id="lot-dl" type="button" style="flex:1 1 150px">Download PNG</button>
+            <button class="btn btn-ghost btn-sm" id="lot-copy" type="button" style="flex:1 1 150px">Copy link</button>
+          </div>
+          <p style="margin-top:12px;font-size:13px;color:var(--muted)">Give this QR to the vendor, who scans it from their Mandi panel.</p>
+        </div>
+      </section>
+
       <section class="card card-hl center hidden" id="share-card" style="margin-top:28px">
         <span class="pill"><span class="ico" data-icon="check" style="font-size:16px"></span>Check-in saved</span>
         <h2 style="margin-top:14px;font-size:22px">Updated journey QR</h2>
@@ -151,6 +176,54 @@ FT.ready(function () {
   }
   FT.$("#loc-retry").addEventListener("click", getLoc);
 
+  function r2(x) { return Math.round(x * 100) / 100; }
+  function showLot(c) {
+    var url = FT.journeyUrl(c, true);
+    FT.$("#lot-qr").innerHTML = FT.qrSvg(url, "QR code for lot " + c.id);
+    FT.$("#lot-id").textContent = c.id;
+    FT.$("#lot-meta").textContent = c.qty + " kg of " + c.crop + (c.lotTo ? " for " + c.lotTo : "");
+    FT.$("#lot-dl").onclick = function () { FT.downloadQR(url, c.id + ".png"); };
+    FT.$("#lot-copy").onclick = function () { FT.copy(url).then(function (ok) { FT.toast(ok ? "Link copied" : "Couldn't copy", ok ? "ok" : "err"); }); };
+    FT.$("#lot-show").classList.remove("hidden");
+  }
+  function renderSplit() {
+    var card = FT.$("#split-card"), b = current, w = b && b.wholesaler;
+    if (role !== "wholesaler" || !b || b.parent || !(b.qty > 0) || !w || w.user !== S.username) { card.classList.add("hidden"); return; }
+    var lots = FT.store.lotsOf(b.id), used = 0;
+    lots.forEach(function (l) { used += l.qty; });
+    FT.$("#sp-total").textContent = b.qty + " kg";
+    FT.$("#sp-used").textContent = r2(used) + " kg";
+    FT.$("#sp-left").textContent = r2(b.qty - used) + " kg";
+    FT.$("#lot-show").classList.add("hidden");
+    FT.$("#lot-list").innerHTML = lots.map(function (l) {
+      return '<div class="list-item"><div style="min-width:0"><div class="t">' + FT.esc(l.qty) + ' kg <small>&middot; ' + FT.esc(l.id) + '</small></div><div class="s">' + (l.lotTo ? "For " + FT.esc(l.lotTo) : "No vendor name") + (l.mandi ? " &middot; At mandi" : "") + '</div></div><button class="linkbtn" type="button" data-lot="' + FT.esc(l.id) + '">View QR</button></div>';
+    }).join("");
+    FT.$$("button[data-lot]", FT.$("#lot-list")).forEach(function (btn) {
+      btn.addEventListener("click", function () { var c = FT.store.getBatch(btn.getAttribute("data-lot")); if (c) { showLot(c); FT.$("#lot-show").scrollIntoView({ behavior: "smooth", block: "nearest" }); } });
+    });
+    card.classList.remove("hidden");
+  }
+  FT.$("#lot-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var le = FT.$("#lot-err"); le.textContent = ""; le.className = "error";
+    function bad(t) { le.textContent = t; le.className = "error show"; }
+    var b = FT.store.getBatch(current && current.id);
+    if (!b || !b.wholesaler) { return; }
+    var kg = r2(parseFloat(FT.$("#lot-kg").value));
+    if (!(kg > 0)) { bad("Enter the lot weight in kg."); return; }
+    var used = 0; FT.store.lotsOf(b.id).forEach(function (l) { used += l.qty; });
+    var left = r2(b.qty - used);
+    if (kg > left) { bad("Only " + left + " kg is left to allocate from this batch."); return; }
+    var c = { id: FT.store.newBatchId(), crop: b.crop, variety: b.variety, qty: kg, harvest: b.harvest, farm: b.farm, village: b.village, notes: "", farmer: "",
+      created: new Date().toISOString(), parent: b.id, parentQty: b.qty, lotTo: FT.$("#lot-to").value.trim(),
+      wholesaler: JSON.parse(JSON.stringify(b.wholesaler)), mandi: null };
+    FT.store.putBatch(c);
+    FT.$("#lot-kg").value = ""; FT.$("#lot-to").value = "";
+    renderSplit();
+    showLot(c);
+    FT.toast("Lot " + c.id + " created (" + kg + " kg)", "ok");
+  });
+
   function resolve(raw) {
     var p = FT.parseBatchInput(raw);
     if (!p) { return null; }
@@ -172,7 +245,8 @@ FT.ready(function () {
     function line(k, v) { return '<div class="row"><span>' + k + "</span><span>" + FT.esc(v) + "</span></div>"; }
     FT.$("#b-rows").innerHTML =
       line("Crop", b.crop + (b.variety ? " · " + b.variety : "")) +
-      line("Quantity", b.qty + " kg") +
+      line(b.parent ? "Lot size" : "Quantity", b.qty + " kg") +
+      (b.parent ? line("From batch", b.parent + (b.parentQty ? " (" + b.parentQty + " kg)" : "")) : "") +
       line("Harvested", FT.fmtDate(b.harvest)) +
       line("Farm", b.farm + (b.village ? ", " + b.village : "")) +
       line("Wholesaler", b.wholesaler ? "Received " + FT.fmtShort(b.wholesaler.received) + (b.wholesaler.departed ? " · Departed " + FT.fmtShort(b.wholesaler.departed) : "") : "Not yet scanned") +
@@ -187,6 +261,7 @@ FT.ready(function () {
     FT.$("#save").textContent = mineDone ? "Update my check-in" : "Save check-in";
     cerr("");
     getLoc();
+    renderSplit();
     FT.$("#batch-card").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
@@ -200,7 +275,7 @@ FT.ready(function () {
   }
 
   function renderRecent() {
-    var items = FT.store.checkinsBy(S.username, role), host = FT.$("#recent");
+    var items = FT.store.checkinsBy(S.username, role).filter(function (x) { return role === "mandi" || !x.parent; }), host = FT.$("#recent");
     if (!items.length) { host.innerHTML = '<p class="empty">Nothing yet. Your check-ins will show up here.</p>'; return; }
     host.innerHTML = items.slice(0, 8).map(function (b) {
       var c = b[role];
@@ -227,6 +302,7 @@ FT.ready(function () {
     if (!FT.validDate(recv)) { cerr("Please pick the date received."); return; }
     if (recv > today) { cerr("Date received can't be in the future."); return; }
     if (recv < latest.harvest) { cerr("Date received can't be before the harvest date (" + FT.fmtDate(latest.harvest) + ")."); return; }
+    if (role === "mandi" && latest.wholesaler && recv < latest.wholesaler.received) { cerr("Date received can't be before the wholesaler received it (" + FT.fmtDate(latest.wholesaler.received) + ")."); return; }
     if (role === "wholesaler" && !dep) { cerr("Please pick the date departed."); return; }
     if (dep) {
       if (!FT.validDate(dep)) { cerr("Please pick a valid departed date."); return; }

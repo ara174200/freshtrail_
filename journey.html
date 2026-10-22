@@ -53,6 +53,7 @@ FT.ready(function () {
     return '<div class="vstep' + (done ? "" : " is-pending") + '"><span class="vdot' + (done ? "" : " pending") + '">' + (done ? FT.icon("check") : "") + '</span><b>' + title + '</b><small>' + sub + '</small></div>';
   }
   var w = b.wholesaler, m = b.mandi;
+  var lotPill = b.parent ? '<p style="margin-top:8px"><span class="pill pill-sm">Lot of ' + FT.esc(b.qty) + " kg" + (b.parentQty ? " from a " + FT.esc(b.parentQty) + " kg harvest" : "") + "</span></p>" : "";
   function where(c) {
     if (!c || typeof c.lat !== "number" || typeof c.lng !== "number") { return ""; }
     return '<br><a href="' + FT.esc(FT.mapUrl(c)) + '" target="_blank" rel="noopener" style="font-weight:600">' + FT.esc(c.place || "View on map") + ' &rarr;</a>';
@@ -67,7 +68,7 @@ FT.ready(function () {
     (b.demo ? '<span class="pill pill-sm" style="margin-bottom:14px">Demo batch</span>' : "") +
     '<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center">' +
     '<div class="ring"><svg viewBox="0 0 132 132" aria-hidden="true"><circle cx="66" cy="66" r="56" fill="none" stroke="#e3ece6" stroke-width="12"/><circle cx="66" cy="66" r="56" fill="none" stroke="' + lab.color + '" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/></svg><div class="mid"><b>' + sc + '</b><span style="color:' + lab.color + '">' + lab.text + '</span></div></div>' +
-    '<div style="flex:1 1 220px;min-width:0"><div style="font-size:13px;color:var(--muted);letter-spacing:.06em;font-weight:600">' + FT.esc(b.id) + '</div><h1 style="font-size:30px;margin-top:2px">' + FT.esc(b.crop) + (b.variety ? " &middot; " + FT.esc(b.variety) : "") + '</h1><p style="margin-top:6px;color:var(--muted);font-size:15px">Harvested ' + FT.esc(FT.ago(days)) + (b.qty ? " &middot; " + FT.esc(b.qty) + " kg" : "") + '</p></div></div>' +
+    '<div style="flex:1 1 220px;min-width:0"><div style="font-size:13px;color:var(--muted);letter-spacing:.06em;font-weight:600">' + FT.esc(b.id) + '</div><h1 style="font-size:30px;margin-top:2px">' + FT.esc(b.crop) + (b.variety ? " &middot; " + FT.esc(b.variety) : "") + '</h1><p style="margin-top:6px;color:var(--muted);font-size:15px">Harvested ' + FT.esc(FT.ago(days)) + (b.qty ? " &middot; " + FT.esc(b.qty) + " kg" : "") + '</p>' + lotPill + '</div></div>' +
     '<div class="rows" style="margin-top:24px"><div class="row"><span>Farm</span><span>' + FT.esc(b.farm) + '</span></div>' +
     (b.village ? '<div class="row"><span>Location</span><span>' + FT.esc(b.village) + '</span></div>' : "") +
     '<div class="row"><span>Harvest date</span><span>' + FT.esc(FT.fmtDate(b.harvest)) + '</span></div></div></section>' +
